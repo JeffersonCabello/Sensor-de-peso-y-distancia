@@ -1,16 +1,16 @@
-#include <Arduino.h>
-#include "HX711.h"
-#include "soc/rtc.h"
-#include "BluetoothSerial.h"
-#include "esp_adc_cal.h"
-#include <Preferences.h>
+//#include <Arduino.h>
+//#include "HX711.h"
+//#include "soc/rtc.h"
+//#include "BluetoothSerial.h"
+//#include "esp_adc_cal.h"
+//#include <Preferences.h>
 
 // Pines para el sensor de peso HX711
-const int LOADCELL_DOUT_PIN = 16;
-const int LOADCELL_SCK_PIN = 4;
+//const int LOADCELL_DOUT_PIN = 16;
+//const int LOADCELL_SCK_PIN = 4;
 
-HX711 scale;
-Preferences preferences;
+//HX711 scale;
+//Preferences preferences;
 
 // Pines para el sensor ultrasonico
 const int trigPin = 5;
@@ -23,22 +23,22 @@ long duration;
 float distanceCm;
 
 void setup() {
-  Serial.begin(115200); // Starts the serial communication
+  Serial.begin(9600); // Starts the serial communication
   pinMode(trigPin, OUTPUT); // Sets the trigPin as an Output
   pinMode(echoPin, INPUT); // Sets the echoPin as an Input
-  scale.begin(LOADCELL_DOUT_PIN, LOADCELL_SCK_PIN);
+  //scale.begin(LOADCELL_DOUT_PIN, LOADCELL_SCK_PIN);
 
-  preferences.begin("NPC-Balanzas", false); 
-  double calibracion = preferences.getDouble("calibracion",14.83);
-  scale.set_scale(14.83);
-  scale.tare(); // reset the scale to 0
-  preferences.end();
+  //preferences.begin("NPC-Balanzas", false); 
+  //double calibracion = preferences.getDouble("calibracion",14.83);
+  //scale.set_scale(14.83);
+  //scale.tare(); // reset the scale to 0
+  //preferences.end();
   
 }
 
 void loop() {
 
-  double oneReading = (scale.get_units(5)/1000);
+  //double oneReading = (scale.get_units(5)/1000);
 
   // Clears the trigPin
   digitalWrite(trigPin, LOW);
@@ -58,8 +58,8 @@ void loop() {
   Serial.print("Distancia (cm): ");
   Serial.println(distanceCm);
 
-  Serial.print("Peso (Kg): ");
-  Serial.println(oneReading);
+  //Serial.print("Peso (Kg): ");
+  //Serial.println(oneReading);
   
   delay(1000);
 }
