@@ -15,17 +15,22 @@
 #define MQTT_PORT 1883
 
 // Temperature MQTT Topics
-#define MQTT_PUB_TEMP "tacho1/distancia"
-#define MQTT_PUB_HUM "tacho1/peso"
+#define MQTT_PUB_DISTANCIA "tacho1/distancia"
+#define MQTT_PUB_PESO "tacho1/peso"
 
-#define MQTT_PUB_TEMP2 "tacho2/distancia"
-#define MQTT_PUB_HUM2 "tacho2/peso"
+#define MQTT_PUB_DISTANCIA2 "tacho2/distancia"
+#define MQTT_PUB_PESO2 "tacho2/peso"
 
-#define MQTT_PUB_TEMP3 "tacho3/distancia"
-#define MQTT_PUB_HUM3 "tacho3/peso"
+#define MQTT_PUB_DISTANCIA3 "tacho3/distancia"
+#define MQTT_PUB_PESO3 "tacho3/peso"
 
-const int trigPin = 12;
+const int trigPin = 15;
 const int echoPin = 14;
+
+const int LOADCELL_DOUT_PIN = 12;
+const int LOADCELL_SCK_PIN = 13;
+char buffer[10];
+HX711 scale;
 
 //define sound velocity in cm/uS
 #define SOUND_VELOCITY 0.034
@@ -88,6 +93,9 @@ void setup() {
   Serial.begin(115200); // Starts the serial communication
   pinMode(trigPin, OUTPUT); // Sets the trigPin as an Output
   pinMode(echoPin, INPUT); // Sets the echoPin as an Input
+  scale.begin(LOADCELL_DOUT_PIN, LOADCELL_SCK_PIN); 
+  scale.set_scale(76.925);
+  scale.tare(); // reset the scale to 0  
   wifiConnectHandler = WiFi.onStationModeGotIP(onWifiConnect);
   wifiDisconnectHandler = WiFi.onStationModeDisconnected(onWifiDisconnect);
   
@@ -104,6 +112,8 @@ void setup() {
 }
 
 void loop() {
+  double oneReading = (scale.get_units(1)/1000);
+  float peso = roundf(oneReading * 10) / 10;
   unsigned long currentMillis = millis();
   // Every X number of seconds (interval = 10 seconds) 
   // it publishes a new MQTT message
@@ -128,29 +138,34 @@ void loop() {
   // Prints the distance on the Serial Monitor
   Serial.print("Distancia (cm): ");
   Serial.println(distanceCm);
+
+  Serial.print("Peso (kg): ");
+  Serial.println(peso);
     // Read temperature as Celsius (the default)
     
     // Read temperature as Fahrenheit (isFahrenheit = true)
     //temp = dht.readTemperature(true);
     
     // Publish an MQTT message on topic esp/dht/temperature
-    uint16_t packetIdPub1 = mqttClient.publish(MQTT_PUB_TEMP, 1, true, String(distanceCm).c_str());                            
-    Serial.printf("Publishing on topic %s at QoS 1, packetId: %i ", MQTT_PUB_TEMP, packetIdPub1);
-    Serial.printf("Message: %.2f \n", distanceCm);
+    /*uint16_t packetIdPub1 = mqttClient.publish(MQTT_PUB_DISTANCIA, 1, true, String(distanceCm).c_str());                            
+    Serial.printf("Publishing on topic %s at QoS 1, packetId: %i ", MQTT_PUB_DISTANCIA, packetIdPub1);
+    Serial.printf("Message: %.2f \n", distanceCm);*/
 
-    uint16_t packetIdPub2 = mqttClient.publish(MQTT_PUB_HUM, 1, true, String(distanceCm).c_str());                            
+    uint16_t packetIdPub1 = mqttClient.publish(MQTT_PUB_DISTANCIA, 1, true, String(distanceCm).c_str());                            
 
-    uint16_t packetIdPub3 = mqttClient.publish(MQTT_PUB_HUM2, 1, true, String(distanceCm).c_str());                            
+    uint16_t packetIdPub2 = mqttClient.publish(MQTT_PUB_DISTANCIA2, 1, true, String(distanceCm).c_str());                            
+                      
+    uint16_t packetIdPub3 = mqttClient.publish(MQTT_PUB_DISTANCIA3, 1, true, String(distanceCm).c_str());     
 
-    uint16_t packetIdPub4 = mqttClient.publish(MQTT_PUB_TEMP2, 1, true, String(distanceCm).c_str());                            
+      // Publish an MQTT message on topic esp/dht/humidity
+    /*uint16_t packetIdPub4 = mqttClient.publish(MQTT_PUB_PESO, 1, true, String(peso).c_str());                            
+    Serial.printf("Publishing on topic %s at QoS 1, packetId %i: ", MQTT_PUB_PESO, packetIdPub2);
+    Serial.printf("Message: %.2f \n", peso);*/
 
-    uint16_t packetIdPub5 = mqttClient.publish(MQTT_PUB_TEMP3, 1, true, String(distanceCm).c_str());                            
+    uint16_t packetIdPub4 = mqttClient.publish(MQTT_PUB_PESO, 1, true, String(peso).c_str());                            
 
-    uint16_t packetIdPub6 = mqttClient.publish(MQTT_PUB_TEMP3, 1, true, String(distanceCm).c_str());                            
+    uint16_t packetIdPub5 = mqttClient.publish(MQTT_PUB_PESO2, 1, true, String(peso).c_str());           
 
-    /*// Publish an MQTT message on topic esp/dht/humidity
-    uint16_t packetIdPub2 = mqttClient.publish(MQTT_PUB_HUM, 1, true, String(hum).c_str());                            
-    Serial.printf("Publishing on topic %s at QoS 1, packetId %i: ", MQTT_PUB_HUM, packetIdPub2);
-    Serial.printf("Message: %.2f \n", hum);*/
+    uint16_t packetIdPub6 = mqttClient.publish(MQTT_PUB_PESO3, 1, true, String(peso).c_str());                     
   }
 }
