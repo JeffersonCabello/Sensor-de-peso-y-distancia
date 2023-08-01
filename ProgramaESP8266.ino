@@ -91,11 +91,16 @@ void onMqttPublish(uint16_t packetId) {
 
 void setup() {
   Serial.begin(115200); // Starts the serial communication
+
+ // Wait for serial to initialize.
+  while(!Serial) { }
+
   pinMode(trigPin, OUTPUT); // Sets the trigPin as an Output
   pinMode(echoPin, INPUT); // Sets the echoPin as an Input
   scale.begin(LOADCELL_DOUT_PIN, LOADCELL_SCK_PIN); 
   scale.set_scale(76.925);
   scale.tare(); // reset the scale to 0  
+
   wifiConnectHandler = WiFi.onStationModeGotIP(onWifiConnect);
   wifiDisconnectHandler = WiFi.onStationModeDisconnected(onWifiDisconnect);
   
@@ -107,11 +112,10 @@ void setup() {
   mqttClient.setServer(MQTT_HOST, MQTT_PORT);
   // If your broker requires authentication (username and password), set them below
   //mqttClient.setCredentials("REPlACE_WITH_YOUR_USER", "REPLACE_WITH_YOUR_PASSWORD");
-  
-  connectToWifi();
+
 }
 
-void loop() {
+void data() {
   double oneReading = (scale.get_units(1)/1000);
   float peso = roundf(oneReading * 10) / 10;
   unsigned long currentMillis = millis();
@@ -124,23 +128,23 @@ void loop() {
     // Clears the trigPin
     digitalWrite(trigPin, LOW);
     delayMicroseconds(2);
-  // Sets the trigPin on HIGH state for 10 micro seconds
+    // Sets the trigPin on HIGH state for 10 micro seconds
     digitalWrite(trigPin, HIGH);
     delayMicroseconds(10);
     digitalWrite(trigPin, LOW);
   
-  // Reads the echoPin, returns the sound wave travel time in microseconds
-  duration = pulseIn(echoPin, HIGH);
-  
-  // Calculate the distance
-  distanceCm = duration * SOUND_VELOCITY/2;
-  
-  // Prints the distance on the Serial Monitor
-  Serial.print("Distancia (cm): ");
-  Serial.println(distanceCm);
+    // Reads the echoPin, returns the sound wave travel time in microseconds
+    duration = pulseIn(echoPin, HIGH);
+    
+    // Calculate the distance
+    distanceCm = duration * SOUND_VELOCITY/2;
+    
+    // Prints the distance on the Serial Monitor
+    Serial.print("Distancia (cm): ");
+    Serial.println(distanceCm);
 
-  Serial.print("Peso (kg): ");
-  Serial.println(peso);
+    Serial.print("Peso (kg): ");
+    Serial.println(peso);
     // Read temperature as Celsius (the default)
     
     // Read temperature as Fahrenheit (isFahrenheit = true)
@@ -166,6 +170,41 @@ void loop() {
 
     uint16_t packetIdPub5 = mqttClient.publish(MQTT_PUB_PESO2, 1, true, String(peso).c_str());           
 
-    uint16_t packetIdPub6 = mqttClient.publish(MQTT_PUB_PESO3, 1, true, String(peso).c_str());                     
+    uint16_t packetIdPub6 = mqttClient.publish(MQTT_PUB_PESO3, 1, true, String(peso).c_str());           
+
+
+    /*unsigned long startTime = millis();
+
+    wifi_set_sleep_type(LIGHT_SLEEP_T); 
+    delay(300000);
+
+    unsigned long endTime = millis();
+    unsigned long duration = endTime - startTime;
+    Serial.print("Duracion ZZZ: ");
+    Serial.println(duration);*/
   }
+ }
+
+ void light_sleep(){
+   wifi_station_disconnect();
+   wifi_set_opmode_current(NULL_MODE);
+   wifi_fpm_set_sleep_type(LIGHT_SLEEP_T); // set sleep type, the above posters wifi_set_sleep_type() didnt seem to work for me although it did let me compile and upload with no errors 
+   wifi_fpm_open(); // Enables force sleep
+   gpio_pin_wakeup_enable(GPIO_ID_PIN(2), GPIO_PIN_INTR_LOLEVEL); // GPIO_ID_PIN(2) corresponds to GPIO2 on ESP8266-01 , GPIO_PIN_INTR_LOLEVEL for a logic low, can also do other interrupts, see gpio.h above
+   wifi_fpm_do_sleep(0xFFFFFFF); // Sleep for longest possible time
+ }
+
+ void doDelays(){
+   //delay(300000);
+   delay(1000);
+ }
+
+void loop() {
+  connectToWifi();
+  data();
+  delay(200);
+  Serial.println("A mimir");
+  light_sleep();
+  doDelays();
+  Serial.println("Buenos Dias de Dios");
 }
