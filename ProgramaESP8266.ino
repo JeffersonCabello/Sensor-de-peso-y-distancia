@@ -4,6 +4,8 @@
 #include <AsyncMqttClient.h>
 #include "HX711.h" 
 #include <PubSubClient.h>
+#include <WiFiUdp.h>
+#include <NTPClient.h>
 
 // Replace the next variables with your SSID/Password combination
 #define WIFI_SSID "NETONE_CABELLO"
@@ -41,6 +43,9 @@ WiFiClient espClient;
 PubSubClient client(espClient);
 const char *topic = "tacho1/distancia";
 const char *topic2 = "tacho1/peso";
+
+WiFiUDP ntpUDP;
+NTPClient timeClient(ntpUDP, "3.south-america.pool.ntp.org",-18000 ,6000);
 
 //define sound velocity in cm/uS
 #define SOUND_VELOCITY 0.034
@@ -95,6 +100,7 @@ void onMqttPublish(uint16_t packetId) {
   Serial.print("  packetId: ");
   Serial.println(packetId);
 }
+
 
 void callback(char *topic, byte *payload, unsigned int length) {
  Serial.print("Message arrived in topic: ");
@@ -181,10 +187,30 @@ void setup() {
   delay(500);
   Serial.println("Connecting to WiFi..");
   }
+
+  //timeClient.begin(); 
+  //timeClient.update();
+  //int hora = timeClient.getHours();
+  //Serial.println(hora);
+
   dataPubSub();
   delay(1000);
   Serial.println("A mimir");
-  ESP.deepSleep(5e6);
+  ESP.deepSleep(600e6);
+
+  /*timeClient.begin(); 
+  timeClient.update();
+  int hora = timeClient.getHours();
+  if(hora > 18 {
+    ESP.deepSleep(3600e6);
+  }else if(hora <6){
+    ESP.deepSleep(3600e6);
+  }else{
+    dataPubSub();
+    delay(1000);
+    Serial.println("A mimir");
+    ESP.deepSleep(600e6);
+  }*/
 }
 
 void loop() {
